@@ -222,7 +222,6 @@ int main(int argc, const char * argv[]) {
       {
          index = indices[i];
          cost +=lambda[i]*((Pbar0[j].loc1-Psupp[index].loc1)*(Pbar0[j].loc1-Psupp[index].loc1)+(Pbar0[j].loc2-Psupp[index].loc2)*(Pbar0[j].loc2-Psupp[index].loc2));
-         //         std::cout << index << " " ;
       }
       
       w[j] = model->addVar(0.0, 1.0, cost, GRB_CONTINUOUS);//This updates the objective
@@ -264,10 +263,7 @@ int main(int argc, const char * argv[]) {
    }
    t = std::chrono::steady_clock::now();
    std::cout << "Setup Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t-start).count()  <<"ms" << std::endl;
-   /*
-    t = clock();
-    std::cout << "Setup time: " << (double)(t-t0)/CLOCKS_PER_SEC << std::endl;
-    */
+   
    model->optimize();
    auto t0 = t;
    t = std::chrono::steady_clock::now();
@@ -313,10 +309,6 @@ int main(int argc, const char * argv[]) {
    delete env;
    t = std::chrono::steady_clock::now();
    std::cout << "Total Running time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t-start).count()  <<"ms" << std::endl;
-   /*
-    t = clock()-t0;
-    std::cout << "Total run time: " << (double)t/CLOCKS_PER_SEC << std::endl;
-    */
    return 0;
 }
 
@@ -329,13 +321,11 @@ bool validateDist(const std::vector<SuppPt>::iterator it1, const std::vector<Sup
       total += it->mass;
       ++it;
    }
-   //   std::cout << total << std::endl;
    
    if (total < 0.95 || total > 1.05)
    {
       std::cout << "Warning: Far from 1. Consider alternative." << total << std::endl;
    }
-   //   std::cout << total << std::endl;
    if (total != 1)
    {
       it1->mass = it1->mass + (1.0-total);
