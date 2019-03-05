@@ -21,9 +21,9 @@ int main(int argc, const char * argv[]) {
    auto start = std::chrono::steady_clock::now();
    auto t = start;
    
-   int startyear = 12;
-   std::string startmonth = "Feb";//Jan 2012 not in data set. Start: Feb 2012.
-   int Pnum =11;//If NumMoMeas = 1, Number of months to process. Will go consecutively from start month, skipping any empty months.
+   int startyear = 15;
+   std::string startmonth = "Jan";//Jan 2012 not in data set. Start: Feb 2012.
+   int Pnum =12;//If NumMoMeas = 1, Number of months to process. Will go consecutively from start month, skipping any empty months.
    //Otherwise, Number of measures that will be created. Will combine NumMoMeas of months into each measure
    int NumMoMeas = 1;//Number of Months in a single Measure. Use 1 for original approach of each month is its own measure
    
@@ -75,8 +75,8 @@ int main(int argc, const char * argv[]) {
       double sum = 0;
       for (int i = 0; i < Pnum-1; ++i)
       {
-         //      lambda[i] = (double)Psnum[i]/totalsupp;
-         lambda[i] = 1.0/Pnum;
+         //      lambda[i] = (double)Psnum[i]/totalsupp; // Weight each murder equally
+         lambda[i] = 1.0/Pnum; // weight each month equally
          sum += lambda[i];
       }
       lambda[Pnum-1] = 1-sum;
@@ -196,7 +196,7 @@ int main(int argc, const char * argv[]) {
    
    GRBEnv* env = new GRBEnv();
    GRBModel* model = new GRBModel(*env);
-   model->set(GRB_IntParam_Method, 0);
+//   model->set(GRB_IntParam_Method, 0);
    model->set(GRB_IntParam_Presolve, 0);
    model->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
    
