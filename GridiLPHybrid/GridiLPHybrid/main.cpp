@@ -30,8 +30,8 @@ struct costcoord
 
 int main(int argc, const char * argv[]) {
    
-   clock_t t = clock();
-   clock_t t0 = t;
+   auto start = std::chrono::steady_clock::now();
+   auto t = start;
    
    const int Pnum = 4;
    int digit = 1;
@@ -525,13 +525,16 @@ int main(int argc, const char * argv[]) {
    //      std::ostringstream filename;
    //      filename << "/Users/spatterson/Documents/test.lp";
    //      model->write(filename.str());
-   t = clock();
-   std::cout << "Setup time: " << (double)(t-t0)/CLOCKS_PER_SEC << std::endl;
+   
+   auto told = t;
+   t = std::chrono::steady_clock::now();
+   std::cout << "Setup time: " <<std::chrono::duration_cast<std::chrono::milliseconds>(t-start).count() << "ms"<< std::endl;
    
    model->optimize();
    
-   t = clock()-t;
-   std::cout << "Model Solve time: " << (double)t/CLOCKS_PER_SEC << std::endl;
+   told = t;
+   t = std::chrono::steady_clock::now();
+   std::cout << "Model Solve time: " <<std::chrono::duration_cast<std::chrono::milliseconds>(t-told).count() << "ms"  << std::endl;
    
    std::vector<SuppPt>::iterator it = Pbar0.begin();
    std::vector<SuppPt> Pbar01(Pbarmaxsize);
@@ -590,8 +593,8 @@ int main(int argc, const char * argv[]) {
    delete model;
    delete env;
    
-   t = clock()-t0;
-   std::cout << "Total run time: " << (double)t/CLOCKS_PER_SEC << std::endl;
+   t = std::chrono::steady_clock::now();
+   std::cout << "Total run time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t-start).count() << "ms"<< std::endl;
    
    return 0;
 }
@@ -607,13 +610,11 @@ bool validateDist(const std::vector<SuppPt>::iterator it1, const std::vector<Sup
       total += it->mass;
       ++it;
    }
-   //   std::cout << total << std::endl;
    
    if (total < 0.95 || total > 1.05)
    {
       std::cout << "Warning: Far from 1. Consider alternative." << total << std::endl;
    }
-   //   std::cout << total << std::endl;
    if (total != 1)
    {
       it1->mass = it1->mass + (1.0-total);
