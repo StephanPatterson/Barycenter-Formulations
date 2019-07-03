@@ -89,7 +89,7 @@ int main(int argc, const char * argv[]) {
       std::ostringstream fname;
       int year;
       std::string month;
-      fname << "/Users/spatterson/Documents/Column Generation/murdercleaned.csv";
+      fname << "DenverCrime.csv";
       indata.open(fname.str());
       getline(indata, temp, '\n');// Advance past headers
       indata >> year;

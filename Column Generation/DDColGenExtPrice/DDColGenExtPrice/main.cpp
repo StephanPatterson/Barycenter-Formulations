@@ -1,6 +1,8 @@
 //
 //  main.cpp
-//  This version is for experimenting with putting the largest or smallest measures in the pricing problem
+//  Column Generation
+//  Greedy-Start
+//  Large and Small choice Pricing problems
 //
 //  Created by Stephan Patterson on 12/4/18.
 //  Copyright © 2018 Stephan Patterson. All rights reserved.
@@ -49,16 +51,15 @@ int main(int argc, const char * argv[]) {
    int endindices[Pnum];
    int Aprn=0;
    double lambda[Pnum];
-   //   std::vector<std::string> monthnames = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
    
    int warmstart = 1; //If 1, the previous solution is saved and reintroduced before ->optimize()
-   const double pricetol = -1e-6; // Stopping tolerance for pricing problem.
+   // This should be 1 for fastest running times
+   const double pricetol = -1e-6; // Stopping tolerance for pricing problem. Default: -1e-6
    int NumMoMeas = 1;//Number of Months in a single Measure. Use 1 for original approach of each month is its own measure
    int comptoTrue = 1;// If 1, will read in the objective value produced by the general formulation for the given year, and calculate error at each iteration //Also includes code to check when levels, powers of 10, are reached
    double Trueobj = 0;
    std::ofstream outerror;
    double currenttol = 1.0;
-   
    
    std::string temp;
    
@@ -66,7 +67,7 @@ int main(int argc, const char * argv[]) {
    std::ostringstream fname;
    int year;
    std::string month;
-   fname << "/Users/spatterson/Documents/Column Generation/murdercleaned.csv";
+   fname << "/DenverCrime.csv";
    indata.open(fname.str());
    getline(indata, temp, '\n');// Advance past headers
    indata >> year;
@@ -144,7 +145,7 @@ int main(int argc, const char * argv[]) {
    // Adjust code: < for smallest in price, > for largest in price
    int maxindex;
    int secondmaxindex;
-   if (Psnumtemp[1] < Psnumtemp[0])
+   if (Psnumtemp[1] > Psnumtemp[0]) // >, <
    {
       maxindex =1;
       secondmaxindex =0;
@@ -156,14 +157,14 @@ int main(int argc, const char * argv[]) {
    }
    for (int i = 2; i < Pnum; ++i)
    {
-      if (Psnumtemp[i] < Psnumtemp[maxindex])
+      if (Psnumtemp[i] > Psnumtemp[maxindex]) // >, <
       {
          secondmaxindex =maxindex;
          maxindex = i;
       }
       else
       {
-         if (Psnumtemp[i] < Psnumtemp[secondmaxindex])
+         if (Psnumtemp[i] > Psnumtemp[secondmaxindex]) // >, <
          {
             secondmaxindex = i;
          }
@@ -171,39 +172,25 @@ int main(int argc, const char * argv[]) {
    }
    std::vector<SuppPt> Psupp(totalsupp);
    
-   std::cout << "Finding correct max? " << maxindex+1 << " " << Psnumtemp[maxindex] << " " << secondmaxindex+1 << " " << Psnumtemp[secondmaxindex] << std::endl;
    std::vector<SuppPt>::iterator Psuppit = Psupp.begin();
    std::vector<SuppPt>::iterator Psupptempit = Psupptemp.begin();
-   //   int tempind = 0; // was only using for display
+   
    for (int i = 0; i < maxindex; ++i)
    {
       Psupptempit += Psnumtemp[i];
-      //      tempind +=Psnumtemp[i];
    }
    std::copy(Psupptempit, Psupptempit+Psnumtemp[maxindex], Psuppit);
-   /*
-   for (int j = 0; j < Psnumtemp[maxindex]; ++j)
-   {
-   std::cout << Psupp[j] << std::endl;
-   std::cout << Psupptemp[j+tempind] << std::endl;
-   }*/
+
    Psuppit += Psnumtemp[maxindex];
    Psnum[0] = Psnumtemp[maxindex];
    Psupptempit = Psupptemp.begin();
-   //   tempind = 0;
+   
    for (int i = 0; i < secondmaxindex; ++i)
    {
       Psupptempit += Psnumtemp[i];
-      //      tempind +=Psnumtemp[i];
    }
    std::copy(Psupptempit, Psupptempit+Psnumtemp[secondmaxindex], Psuppit);
-   /*
-   for (int j = 0; j < Psnumtemp[secondmaxindex]; ++j)
-   {
-   std::cout << *Psuppit << std::endl;
-   ++Psuppit;
-   std::cout << Psupptemp[j+tempind] << std::endl;
-   }*/
+
    Psnum[1] = Psnumtemp[secondmaxindex];
    Psuppit = Psupp.begin() + Psnum[0] +Psnum[1];
    Psupptempit = Psupptemp.begin();
@@ -234,13 +221,13 @@ int main(int argc, const char * argv[]) {
    if (comptoTrue == 1)
    {
       std::ostringstream fname2;
-      fname2 << "/Users/spatterson/Documents/Column Generation/GenObj" << startyear << "_" << Pnum << ".txt";
+      fname2 << "/GenObj" << startyear << "_" << Pnum << ".txt";
       indata.open(fname2.str());
       indata >> Trueobj;
       indata.close();
       std::cout <<Trueobj << std::endl;
       std::ostringstream fname3;
-      fname3 << "/Users/spatterson/Documents/Column Generation/ColGenGreedySmallYr" << startyear << "_" << Pnum << ".txt";
+      fname3 << "/ColGenGreedyLargeYr" << startyear << "_" << Pnum << ".txt";
       outerror.open(fname3.str());
       if (Trueobj == 0)
       {
