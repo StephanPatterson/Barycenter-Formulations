@@ -289,7 +289,7 @@ int main(int argc, const char * argv[]) {
    std::vector<SuppPt> Pbar0(S0);
    //c constains the cost associated with each grouping in the general formulation
    std::vector<double> c(S0);
-   //Amaster contains only those columns which are being used for the master problem
+   //Amaster contains only those columns which are being used for the first restricted master problem
    //this contains the columns from the general formulation, not the DW formulation
    std::vector< std::vector<int> > Amaster;
    
@@ -488,10 +488,7 @@ int main(int argc, const char * argv[]) {
    
    mastert.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(t-told).count());
    std::cout << "Master " << mastersolvenum << " solve time: " << mastert[0] << "ms with objective " << masterobj << std::endl;
-   
-   
-   //Should add a check here that we got an optimal solution
-   
+
    GRBEnv* env2 = new GRBEnv();
    GRBModel* price = new GRBModel(*env2);
    //price->set(GRB_IntParam_Method, 0);
@@ -503,10 +500,7 @@ int main(int argc, const char * argv[]) {
    
    int numuniquecol = Psnum[0]*Psnum[1];
    std::vector<int> mincindices(numuniquecol,0);
-   /*std::cout << constrs[0].get(GRB_DoubleAttr_Pi) << std::endl;
-    std::cout << constrs[1].get(GRB_DoubleAttr_Pi) << std::endl;
-    
-    std::cout << constrs[2].get(GRB_DoubleAttr_Pi) << std::endl;*/
+
    /*
     //This is for writing the dual solution to a file.
     std::ofstream outdata;
@@ -518,12 +512,6 @@ int main(int argc, const char * argv[]) {
     */
    double* yhat = master->get(GRB_DoubleAttr_Pi, constrs, Amrn+1);
    std::vector<double> yhatprev(Amrn);
-   /*
-    for (int i = 0; i < Amrn; ++i)
-    {
-    yhatprev[i] = yhat[i];
-    }
-    */
    
    /*
     for (int i = 0; i < Amrn+1; ++i)
@@ -536,16 +524,8 @@ int main(int argc, const char * argv[]) {
     */
    std::cout << Amrn << " " << blockreplength << std::endl;
    std::vector<double> yhatAmas= dualtotals( yhat,  Amrn, blockreplength, Psnum, Pnum);
-   //  std::vector<double> yhatAmasprev = yhatAmas;
    
    std::vector<double> cnew;
-   //   std::vector<double> cprev;
-   
-   /*   for (int i = 0; i < S0; ++i)
-    {
-    cnew.push_back(c[i]-yhatAmas[i]);
-    //      std::cout << c[i] << " " << yhatAmas[i] << " " << cnew[i] << std::endl;
-    }*/
    
    GRBLinExpr objective = -1*yhat[Amrn];
    price->setObjective(objective);
@@ -620,11 +600,7 @@ int main(int argc, const char * argv[]) {
    
    for (int i = 0; i < numuniquecol; ++i)
    {
-      xsol[i] = x[i].get(GRB_DoubleAttr_X);/*
-                                            if (xsol[i] != 0)
-                                            {
-                                            std::cout << i << " " << xsol[i] << std::endl;
-                                            }*/
+      xsol[i] = x[i].get(GRB_DoubleAttr_X);
    }
    /*
     told = t;
@@ -667,40 +643,14 @@ int main(int argc, const char * argv[]) {
        t = std::chrono::steady_clock::now();
        std::cout << "cx calculation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t-told).count()  <<"ms" << std::endl;*/
       
-      
-      //      cost -= 0.01;
-      /*
-       //This is the old version
-       double expcoeff3[Amrn+1];
-       mvmult( Amrn, blockreplength, S0, xsol2, expcoeff3, Psnum, Pnum);
-       expcoeff3[Amrn] = 1.0;*/
       double expcoeff2[Amrn+1];
       mvmult( Amrn, blockreplength, numuniquecol, xsol, mincindices, expcoeff2, Psnum, Pnum);
       expcoeff2[Amrn] = 1.0;
       
       /*
-       for (int i = 0; i <= Amrn; ++i)
-       {
-       std::cout << expcoeff2[i] << " " << expcoeff3[i] << std::endl;
-       }
-       std::cout << std::endl;*/
-      
-      /*      for (int i = 0; i < Amrn; ++i)
-       {
-       expcoeff2[i] = expcoeff[i];
-       }*/
-      
-      /*
        told = t;
        t = std::chrono::steady_clock::now();
        std::cout << "Constraint coefficient calculation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t-told).count()  <<"ms" << std::endl;*/
-      
-      /*
-       lamkcurrentopt.clear();
-       for (int i = 0; i < lamk.size(); ++i)
-       {
-       lamkcurrentopt.push_back(lamk[i].get(GRB_DoubleAttr_X));
-       }*/
       
       GRBColumn newmastercol;
       newmastercol.addTerms(expcoeff2, master->getConstrs(), Amrn+1);
@@ -727,7 +677,6 @@ int main(int argc, const char * argv[]) {
          {
             lamk[i].set(GRB_IntAttr_VBasis, vbases[i]);
          }
-         //         lamk[lamk.size()-1].set(GRB_IntAttr_VBasis,-1);
          for (int i = 0; i <=Amrn; ++i)
          {
             constrs[i].set(GRB_IntAttr_CBasis, cbases[i]);
@@ -782,8 +731,6 @@ int main(int argc, const char * argv[]) {
       
       if (warmstart == 1)
       {
-         //         constrs =master->getConstrs();
-         //         vbases.clear();
          for (int i = 0; i < lamk.size(); ++i)
          {
             vbases[i] = (lamk[i].get(GRB_IntAttr_VBasis));
@@ -813,7 +760,7 @@ int main(int argc, const char * argv[]) {
          ychange[i] -= yhatprev[i];
       }
       /*
-       This bit of code writes the dual solutions to a file.
+       This writes the dual solutions to a file.
        for (int i = 0; i < Amrn+1; ++i)
        {
        outdata << yhat[i] << " ";
@@ -823,41 +770,22 @@ int main(int argc, const char * argv[]) {
        outdata << std::endl;
        */
       
-      
-      
       //      told = t;
       //      t = std::chrono::steady_clock::now();
       
-      //      yhatAmasprev = yhatAmas;
-      
       adjusttotals(yhatAmas, ychange, Amrn, blockreplength, Psnum, Pnum);
       
-      /*      std::cout << "Start of yhatA comparison. New, then previous." << std::endl;
-       for (int i = 0; i <blockreplength; ++i)
-       {
-       std::cout << yhatAmas[i] << " " << yhatAmasprev[i] << std::endl;
-       }*/
       /*
        told = t;
        t = std::chrono::steady_clock::now();
        std::cout << "Calculate product yTA new " << std::chrono::duration_cast<std::chrono::milliseconds>(t-told).count()  <<"ms" << std::endl;
        */
-      /*      if (yhatAmas2 == yhatAmas)
-       {
-       std::cout << "works! " <<std::endl;
-       }*/
       /*
        told = t;
        t = std::chrono::steady_clock::now();
        std::cout << "Calculate product yTA " << std::chrono::duration_cast<std::chrono::milliseconds>(t-told).count()  <<"ms" << std::endl;
        */
-      /*
-       if (yhatPrev == yhatAmas)
-       {
-       std::cout << "Equivalent dual solution will now produce same pricing solution. Algorithm stalls." << std::endl;
-       break;
-       }*/
-      //Something wrong here?- on first iter?
+
       if (iter > 1)
       {
          int equal = 1;
@@ -876,7 +804,7 @@ int main(int argc, const char * argv[]) {
          }
       }
       
-      //      cprev = cnew;
+
       cnew.clear();
       
       GRBLinExpr objective = -1*yhat[Amrn];
@@ -916,13 +844,7 @@ int main(int argc, const char * argv[]) {
          objective += cnew[j]*x[j];
       }
       //End of price objective construction
-      /*
-       std::cout << "Start of c compares. New, then previous. " << std::endl;
-       for (int j = 0; j < numuniquecol; ++j)
-       {
-       std::cout << cnew[j] << " " << cprev[j] << std::endl;
-       }
-       */
+
       price->setObjective(objective);
       /*
        told = t;
@@ -950,11 +872,6 @@ int main(int argc, const char * argv[]) {
       for (int i = 0; i < numuniquecol; ++i)
       {
          xsol[i] = x[i].get(GRB_DoubleAttr_X);
-         /*
-        if (xsol[i] != 0)
-        {
-        std::cout << i << " " << xsol[i] << " " << mincindices[i] << std::endl;
-        }*/
       }
       /*
        told = t;
