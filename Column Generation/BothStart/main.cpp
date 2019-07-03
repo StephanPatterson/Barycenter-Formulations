@@ -1,11 +1,14 @@
 //
 //  main.cpp
 //  ColGenBothStart
+//  This introduces both initial vertices: Greedy-start and 2-app-start
+//  No noticable improvement to begin with two.
+//  Not fully updated for efficiency.
 //
 //  Created by Stephan Patterson on 12/7/18.
 //  Copyright © 2018 Stephan Patterson. All rights reserved.
 //
-// Start: Greedy and 2-approx = 2 lambda variables
+// Start: Greedy and 2-approx = 2 variables in initial RMP
 
 #include "/Library/gurobi801/mac64/include/gurobi_c++.h"
 #include <iostream>
@@ -38,7 +41,7 @@ int main(int argc, const char * argv[]) {
       //Otherwise, Number of measures that will be created. Will combine NumMoMeas of months into each measure
    int startyear = 13;
    std::string startmonth = "Jan";
-//   std::vector<std::string> monthnames = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+
    std::cout.precision(10);
    int Psnum[Pnum];
    std::vector<SuppPt> Psupp;
@@ -49,7 +52,6 @@ int main(int argc, const char * argv[]) {
    int Aprn=0;
    double lambda[Pnum];
 
-   
    int warmstart = 1; //If 1, the previous solution is saved and reintroduced before ->optimize()
    const double pricetol = -1e-6; // -1e-7 will usually allow duplication before termination. -1e-6 cuts off just a couple iterations with no apparent loss of accuracy in master objective
    int NumMoMeas = 1;//Number of Months in a single Measure. Use 1 for original approach of each month is its own measure
